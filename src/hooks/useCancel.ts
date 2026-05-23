@@ -2,7 +2,7 @@
 
 import { useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey, SystemProgram } from '@solana/web3.js'
-import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from '@solana/spl-token'
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from '@solana/spl-token'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import { useProgram } from './useProgram'
@@ -22,9 +22,10 @@ export function useCancel() {
       const streamPDA = stream.publicKey
       const [vaultPDA] = getVaultPDA(streamPDA)
       const mint = new PublicKey(stream.mint)
+      const recipient = new PublicKey(stream.recipient)
 
       const creatorTokenAccount = await getAssociatedTokenAddress(mint, publicKey)
-      const vaultTokenAccount = await getAssociatedTokenAddress(mint, vaultPDA, true)
+      const recipientTokenAccount = await getAssociatedTokenAddress(mint, recipient)
 
       const toastId = toast.loading('Awaiting wallet approval...')
 
@@ -33,12 +34,14 @@ export function useCancel() {
           .cancelStream()
           .accounts({
             creator: publicKey,
+            recipient,
+            mint,
             stream: streamPDA,
             vault: vaultPDA,
-            vaultTokenAccount,
             creatorTokenAccount,
-            mint,
+            recipientTokenAccount,
             tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
           })
           .rpc()
